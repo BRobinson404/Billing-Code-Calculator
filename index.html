@@ -25,7 +25,22 @@
     <script>
       let previewData = null;
 
-      const sanitize = (str) => str.replace(/[^\x20-\x7E]/g, ""); // remove weird chars
+      // Map billing codes to customer names
+      const customerMap = {
+        1: "Washington Plaza",
+        2: "The Oaks",
+        3: "Guest House",
+        5: "CPC & CPPP",
+        9: "PHM Corp",
+        12: "Nursing Home Split",
+      };
+
+      // Helper to resolve billing code name
+      function getCustomerName(code) {
+        return customerMap[code] ? `${code} - ${customerMap[code]}` : code;
+      }
+
+      const sanitize = (str) => str.replace(/[^\x20-\x7E]/g, "");
 
       document.getElementById("process").addEventListener("click", () => {
         const file = document.getElementById("csvFile").files[0];
@@ -92,7 +107,16 @@
               }
             });
 
-            previewData = { searchTerm, startDate, endDate, matches, totals };
+            const resolvedName = getCustomerName(searchTerm);
+
+            previewData = {
+              searchTerm,
+              resolvedName,
+              startDate,
+              endDate,
+              matches,
+              totals,
+            };
             renderPreview(previewData);
 
             // enable PDF button
@@ -112,7 +136,7 @@
 
         let html = `
         <p><strong>Billing Code / Name:</strong> ${sanitize(
-          data.searchTerm
+          data.resolvedName
         )}</p>
         <p><strong>Date Range:</strong> ${
           data.startDate.toISOString().split("T")[0]
@@ -166,7 +190,7 @@
         doc.text("Billing Code Usage Report", 14, 20);
 
         doc.setFontSize(12);
-        doc.text(`Billing Code / Name: ${sanitize(data.searchTerm)}`, 14, 30);
+        doc.text(`Billing Code / Name: ${sanitize(data.resolvedName)}`, 14, 30);
         doc.text(
           `Date Range: ${data.startDate.toISOString().split("T")[0]} - ${
             data.endDate.toISOString().split("T")[0]
