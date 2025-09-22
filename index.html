@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title>Billing Code Usage Calculator</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -126,7 +126,7 @@
     </style>
   </head>
   <body>
-    <header>Sharp Billing Code Calculator</header>
+    <header>Billing Code Usage Calculator</header>
 
     <main>
       <div class="content">
@@ -140,7 +140,7 @@
             <input
               id="searchTerm"
               type="text"
-              placeholder="Enter exact billing code"
+              placeholder="Enter exact billing code (eg. 1) or part of a user name"
             />
           </div>
 
@@ -184,7 +184,6 @@
       };
 
       function getCustomerName(code) {
-        // If code is like "1" return "1 - Washington Plaza"
         return code in customerMap ? `${code} - ${customerMap[code]}` : code;
       }
 
@@ -201,7 +200,6 @@
 
       function parseCount(v) {
         if (v === undefined || v === null || v === "") return 0;
-        // remove commas and other non-digit chars (except minus)
         const cleaned = String(v)
           .replace(/,/g, "")
           .replace(/[^\d-]/g, "");
@@ -209,15 +207,31 @@
         return Number.isNaN(n) ? 0 : n;
       }
 
-      /* ------------------------Main logic------------------------ */
+      // Extract date-only (YYYY-MM-DD) from timestamp-like strings robustly
+      function extractDateOnly(raw) {
+        if (!raw) return null;
+        // sanitize first
+        const s = sanitize(raw);
+        // try ISO T first
+        if (s.includes("T")) return s.split("T")[0];
+        // try space separated e.g. "2023-06-20 15:48:31"
+        if (s.includes(" ")) return s.split(" ")[0];
+        // fallback: regex match YYYY-MM-DD
+        const m = s.match(/(\d{4}-\d{2}-\d{2})/);
+        return m ? m[1] : null;
+      }
+
+      /* ------------------------
+   Main logic
+   ------------------------ */
       let previewData = null;
 
       document.getElementById("process").addEventListener("click", () => {
         const file = document.getElementById("csvFile").files[0];
-        const rawSearch = document.getElementById("searchTerm").value;
+        const rawSearch = document.getElementById("searchTerm").value || "";
         const searchTerm = sanitize(rawSearch);
-        const startDateInput = document.getElementById("startDate").value;
-        const endDateInput = document.getElementById("endDate").value;
+        const startDateInput = document.getElementById("startDate").value; // "YYYY-MM-DD"
+        const endDateInput = document.getElementById("endDate").value; // "YYYY-MM-DD"
 
         if (!file || !searchTerm || !startDateInput || !endDateInput) {
           alert(
@@ -226,9 +240,9 @@
           return;
         }
 
-        // Normalize date boundaries (use local midnight)
-        const startDate = new Date(startDateInput + "T00:00:00");
-        const endDate = new Date(endDateInput + "T23:59:59.999");
+        // We'll compare date-only strings to avoid timezone issues.
+        const startStr = startDateInput;
+        const endStr = endDateInput;
 
         Papa.parse(file, {
           header: true,
@@ -244,43 +258,33 @@
               grand: 0,
             };
 
-            // For exact matching: get normalized lower-case search term for comparison
-            const searchNorm = searchTerm.toLowerCase();
+            // Prepare normalized search forms
+            const searchNorm = searchTerm.toString().trim().toLowerCase();
 
             rows.forEach((row) => {
-              // read and sanitize relevant fields
-              const rawCode = row["Main Code"];
-              const code = sanitize(rawCode);
+              const codeRaw = sanitize(row["Main Code"]);
+              const code = codeRaw.toString().trim();
               const codeNorm = code.toLowerCase();
 
-              const rawUser = row["User Name"];
-              const user = sanitize(rawUser);
-              const userNorm = user.toLowerCase();
+              const userRaw = sanitize(row["User Name"]);
+              const userNorm = userRaw.toLowerCase();
 
               const rawComplete = sanitize(row["Completing Date & Time"]);
-              // Expecting ISO-like timestamp with "T", but we handle gracefully.
-              const completeDateObj = rawComplete
-                ? new Date(rawComplete)
-                : null;
-              if (!completeDateObj || Number.isNaN(completeDateObj.getTime()))
-                return; // skip invalid dates
+              const dateOnly = extractDateOnly(rawComplete);
+              if (!dateOnly) return; // skip rows without valid date
 
-              // Check date inclusion (either start or complete could be considered in original spec,
-              // but user requested row counts if either falls within range — we already use Completing Date)
+              // MATCH LOGIC: exact on Main Code OR partial on user name
+              const isCodeExactMatch = codeNorm === searchNorm; // exact
+              const isUserPartialMatch = userNorm.includes(searchNorm); // partial
+
+              // Date filter: compare date-only strings (lexicographic safe for YYYY-MM-DD)
               const completesInRange =
-                completeDateObj >= startDate && completeDateObj <= endDate;
-
-              // MATCH LOGIC:
-              // - exact match on MAIN CODE (string equality) OR
-              // - partial match within USER NAME (case-insensitive)
-              const isCodeExactMatch = codeNorm === searchNorm;
-              const isUserPartialMatch = userNorm.includes(searchNorm);
+                dateOnly >= startStr && dateOnly <= endStr;
 
               if (
                 (isCodeExactMatch || isUserPartialMatch) &&
                 completesInRange
               ) {
-                // counts
                 const bw = parseCount(row["Black & White Total Count"]);
                 const full = parseCount(row["Full Color Total Count"]);
                 const two = parseCount(row["2-Color Total Count"]);
@@ -288,10 +292,8 @@
                 const rowGrand = bw + full + two + single;
 
                 matches.push({
-                  complete: rawComplete,
-                  completedDateOnly: completeDateObj
-                    .toISOString()
-                    .split("T")[0],
+                  completedDateOnly: dateOnly,
+                  completeRaw: rawComplete,
                   bw,
                   full,
                   two,
@@ -307,7 +309,7 @@
               }
             });
 
-            // Prepare resolved name (show both code and mapped name if code is numeric and mapped)
+            // resolved name (show both code and name if map exists)
             const resolvedName =
               searchTerm in customerMap
                 ? getCustomerName(searchTerm)
@@ -316,14 +318,13 @@
             previewData = {
               searchTerm,
               resolvedName,
-              startDate: startDate,
-              endDate: endDate,
+              startDateInput: startStr,
+              endDateInput: endStr,
               matches,
               totals,
             };
-            renderPreview(previewData);
 
-            // enable PDF only if we have matches
+            renderPreview(previewData);
             document.getElementById("generate").disabled = !matches.length;
           },
           error: function (err) {
@@ -344,18 +345,22 @@
         let html = `<p><strong>Billing Code / Name:</strong> ${sanitize(
           data.resolvedName
         )}</p>`;
-        html += `<p><strong>Date Range:</strong> ${
-          data.startDate.toISOString().split("T")[0]
-        } - ${data.endDate.toISOString().split("T")[0]}</p>`;
+        html += `<p><strong>Date Range:</strong> ${data.startDateInput} - ${data.endDateInput}</p>`;
 
         html += `<table><thead><tr>
-    <th>Completed Date</th><th>Completing Date & Time</th><th>B&amp;W</th><th>Full Color</th><th>2-Color</th><th>Single Color</th><th>Row Grand Total</th>
+    <th>Completed Date</th>
+    <th>Completing Date & Time</th>
+    <th>B&amp;W</th>
+    <th>Full Color</th>
+    <th>2-Color</th>
+    <th>Single Color</th>
+    <th>Row Grand Total</th>
   </tr></thead><tbody>`;
 
         data.matches.forEach((r) => {
           html += `<tr>
       <td>${r.completedDateOnly}</td>
-      <td>${sanitize(r.complete)}</td>
+      <td>${sanitize(r.completeRaw)}</td>
       <td>${r.bw}</td>
       <td>${r.full}</td>
       <td>${r.two}</td>
@@ -375,7 +380,6 @@
   </tr>`;
 
         html += `</tbody></table>`;
-
         container.innerHTML = html;
       }
 
@@ -394,17 +398,14 @@
         doc.setFontSize(11);
         doc.text(`Billing Code / Name: ${sanitize(data.resolvedName)}`, 40, 72);
         doc.text(
-          `Date Range: ${data.startDate.toISOString().split("T")[0]} - ${
-            data.endDate.toISOString().split("T")[0]
-          }`,
+          `Date Range: ${data.startDateInput} - ${data.endDateInput}`,
           40,
           90
         );
 
-        // build rows for autotable
         const tableBody = data.matches.map((r) => [
           r.completedDateOnly,
-          sanitize(r.complete),
+          sanitize(r.completeRaw),
           r.bw,
           r.full,
           r.two,
@@ -412,7 +413,7 @@
           r.rowGrand,
         ]);
 
-        // append totals row
+        // totals row
         tableBody.push([
           "TOTALS",
           "",
@@ -447,9 +448,6 @@
             fillColor: [230, 230, 230],
             textColor: 0,
             fontStyle: "bold",
-          },
-          didDrawPage: function (dataPage) {
-            // optional: could add page footer text here
           },
         });
 
