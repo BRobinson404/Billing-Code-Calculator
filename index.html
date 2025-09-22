@@ -6,152 +6,174 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: #f4f6f8;
+        background: #f8fafc;
+        color: #1e293b;
         margin: 0;
         padding: 0;
-        color: #333;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      header {
+        background: #0f172a;
+        color: white;
+        padding: 1rem 2rem;
+        text-align: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      main {
+        flex: 1;
+        padding: 2rem 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        width: 100%;
       }
       .content {
-        flex: 1;
-        padding: 2rem 3rem;
-        max-width: 900px;
-        margin: 0 auto;
+        padding-left: 2.5rem; /* extra left breathing room */
       }
-      h1 {
-        text-align: center;
-        padding: 20px;
-        margin: 0;
-        background: #2c3e50;
-        color: white;
-        font-weight: 500;
-      }
-
-      .container {
-        max-width: 900px;
-        margin: 30px auto;
-        background: white;
-        padding: 20px 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      }
-
       label {
-        display: inline-block;
-        margin: 10px 15px 10px 0;
-        font-weight: 500;
+        display: block;
+        margin: 0.5rem 0 0.2rem;
+        font-weight: 600;
       }
-
       input[type="file"],
       input[type="text"],
       input[type="date"] {
-        margin-top: 5px;
-        padding: 6px 8px;
-        border: 1px solid #ccc;
+        padding: 0.55rem 0.7rem;
         border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 0.75rem;
       }
-
+      .row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+      }
+      .col {
+        flex: 1 1 200px;
+        min-width: 160px;
+      }
       button {
-        margin: 10px 5px 20px 0;
-        padding: 10px 18px;
-        font-size: 14px;
-        border: none;
+        padding: 0.6rem 1rem;
         border-radius: 8px;
+        border: none;
         cursor: pointer;
-        transition: all 0.2s ease-in-out;
+        font-weight: 600;
+        margin-right: 0.5rem;
       }
-
       #process {
-        background: #2980b9;
+        background: #2563eb;
         color: white;
       }
-      #process:hover {
-        background: #1f6390;
-      }
-
       #generate {
-        background: #27ae60;
+        background: #16a34a;
         color: white;
       }
       #generate:disabled {
-        background: #95a5a6;
+        background: #94a3b8;
         cursor: not-allowed;
       }
-      #generate:hover:not(:disabled) {
-        background: #1e874b;
-      }
-
       h2 {
-        margin-top: 0;
+        margin-top: 1.25rem;
       }
-
-      table {
+      #preview table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 15px;
+        margin-top: 0.6rem;
+        background: white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        border-radius: 6px;
+        overflow: hidden;
       }
-
-      table th,
-      table td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: center;
+      #preview th,
+      #preview td {
+        padding: 0.6rem 0.8rem;
+        border-bottom: 1px solid #e6eef6;
+        text-align: left;
       }
-
-      table th {
-        background-color: #2980b9;
-        color: white;
+      #preview th {
+        background: #f1f5f9;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        color: #475569;
       }
-
-      table tr:nth-child(even) {
-        background-color: #f9f9f9;
+      #preview tr:nth-child(even) td {
+        background: #fbfdff;
       }
-
-      table tr:hover {
-        background-color: #f1f1f1;
+      #preview tr.total-row td {
+        font-weight: 700;
+        background: #eef2f7;
       }
-
-      table tr:last-child {
-        font-weight: bold;
-        background: #ecf0f1;
-      }
-
       footer {
+        background: #f1f5f9;
         text-align: center;
-        padding: 15px;
-        font-size: 13px;
-        color: #666;
-        background: #f9f9f9;
-        border-top: 1px solid #ddd;
-        margin-top: 40px;
+        padding: 1rem;
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-top: 1.5rem;
+      }
+      footer strong {
+        color: #0f172a;
       }
     </style>
   </head>
   <body>
+    <header>Sharp Billing Code Calculator</header>
+
     <main>
-      <h1>Sharp Billing Code Calculator</h1>
       <div class="content">
-        <input type="file" id="csvFile" accept=".csv" /><br /><br />
+        <div style="margin-bottom: 0.5rem">
+          <input type="file" id="csvFile" accept=".csv" />
+        </div>
 
-        <label>Billing Code / Name: <input type="text" id="searchTerm" /></label
-        ><br /><br />
-        <label>Start Date: <input type="date" id="startDate" /></label>
-        <label>End Date: <input type="date" id="endDate" /></label><br /><br />
+        <div class="row">
+          <div class="col">
+            <label for="searchTerm">Billing Code / Name</label>
+            <input
+              id="searchTerm"
+              type="text"
+              placeholder="Enter exact billing code"
+            />
+          </div>
 
-        <button id="process">Process Data</button>
-        <button id="generate" disabled>Generate PDF Report</button>
+          <div class="col">
+            <label for="startDate">Start Date</label>
+            <input id="startDate" type="date" />
+          </div>
+
+          <div class="col">
+            <label for="endDate">End Date</label>
+            <input id="endDate" type="date" />
+          </div>
+        </div>
+
+        <div style="margin-top: 0.75rem">
+          <button id="process">Process Data</button>
+          <button id="generate" disabled>Generate PDF Report</button>
+        </div>
 
         <h2>Preview</h2>
         <div id="preview"></div>
       </div>
     </main>
 
-    <script>
-      let previewData = null;
+    <footer>
+      A <strong>Brobinson</strong> application powered by
+      <strong>MOEbiz</strong>
+    </footer>
 
-      // Map billing codes to customer names
+    <script>
+      /* ------------------------
+   Helpers and configuration
+   ------------------------ */
       const customerMap = {
         1: "Washington Plaza",
         2: "The Oaks",
@@ -161,28 +183,56 @@
         12: "Nursing Home Split",
       };
 
-      // Helper to resolve billing code name
       function getCustomerName(code) {
-        return customerMap[code] ? `${code} - ${customerMap[code]}` : code;
+        // If code is like "1" return "1 - Washington Plaza"
+        return code in customerMap ? `${code} - ${customerMap[code]}` : code;
       }
 
-      const sanitize = (str) => str.replace(/[^\x20-\x7E]/g, "");
+      // Robust sanitize (remove BOMs, zero-widths, smart quotes, then non-printable)
+      function sanitize(str) {
+        if (str === undefined || str === null) return "";
+        return String(str)
+          .replace(/[\u200B-\u200D\uFEFF]/g, "")
+          .replace(/[“”]/g, '"')
+          .replace(/[‘’]/g, "'")
+          .replace(/[^\x20-\x7E]/g, "")
+          .trim();
+      }
+
+      function parseCount(v) {
+        if (v === undefined || v === null || v === "") return 0;
+        // remove commas and other non-digit chars (except minus)
+        const cleaned = String(v)
+          .replace(/,/g, "")
+          .replace(/[^\d-]/g, "");
+        const n = parseInt(cleaned, 10);
+        return Number.isNaN(n) ? 0 : n;
+      }
+
+      /* ------------------------Main logic------------------------ */
+      let previewData = null;
 
       document.getElementById("process").addEventListener("click", () => {
         const file = document.getElementById("csvFile").files[0];
-        const searchTerm = document.getElementById("searchTerm").value.trim();
-        const startDate = new Date(document.getElementById("startDate").value);
-        const endDate = new Date(document.getElementById("endDate").value);
+        const rawSearch = document.getElementById("searchTerm").value;
+        const searchTerm = sanitize(rawSearch);
+        const startDateInput = document.getElementById("startDate").value;
+        const endDateInput = document.getElementById("endDate").value;
 
-        if (!file || !searchTerm || isNaN(startDate) || isNaN(endDate)) {
+        if (!file || !searchTerm || !startDateInput || !endDateInput) {
           alert(
-            "Please select a file, enter a billing code/name, and a valid date range."
+            "Please select a CSV, enter a billing code/name, and pick start/end dates."
           );
           return;
         }
 
+        // Normalize date boundaries (use local midnight)
+        const startDate = new Date(startDateInput + "T00:00:00");
+        const endDate = new Date(endDateInput + "T23:59:59.999");
+
         Papa.parse(file, {
           header: true,
+          skipEmptyLines: true,
           complete: function (results) {
             const rows = results.data;
             const matches = [];
@@ -194,59 +244,90 @@
               grand: 0,
             };
 
+            // For exact matching: get normalized lower-case search term for comparison
+            const searchNorm = searchTerm.toLowerCase();
+
             rows.forEach((row) => {
-              const code = row["Main Code"];
-              const user = row["User Name"];
-              const completed = new Date(row["Completing Date & Time"]);
-              const bw = parseInt(row["Black & White Total Count"] || 0);
-              const color = parseInt(row["Full Color Total Count"] || 0);
-              const twoColor = parseInt(row["2-Color Total Count"] || 0);
-              const singleColor = parseInt(
-                row["Single Color Total Count"] || 0
-              );
+              // read and sanitize relevant fields
+              const rawCode = row["Main Code"];
+              const code = sanitize(rawCode);
+              const codeNorm = code.toLowerCase();
+
+              const rawUser = row["User Name"];
+              const user = sanitize(rawUser);
+              const userNorm = user.toLowerCase();
+
+              const rawComplete = sanitize(row["Completing Date & Time"]);
+              // Expecting ISO-like timestamp with "T", but we handle gracefully.
+              const completeDateObj = rawComplete
+                ? new Date(rawComplete)
+                : null;
+              if (!completeDateObj || Number.isNaN(completeDateObj.getTime()))
+                return; // skip invalid dates
+
+              // Check date inclusion (either start or complete could be considered in original spec,
+              // but user requested row counts if either falls within range — we already use Completing Date)
+              const completesInRange =
+                completeDateObj >= startDate && completeDateObj <= endDate;
+
+              // MATCH LOGIC:
+              // - exact match on MAIN CODE (string equality) OR
+              // - partial match within USER NAME (case-insensitive)
+              const isCodeExactMatch = codeNorm === searchNorm;
+              const isUserPartialMatch = userNorm.includes(searchNorm);
 
               if (
-                (code && code.toString().includes(searchTerm)) ||
-                (user &&
-                  user
-                    .toString()
-                    .toLowerCase()
-                    .includes(searchTerm.toLowerCase()))
+                (isCodeExactMatch || isUserPartialMatch) &&
+                completesInRange
               ) {
-                if (completed >= startDate && completed <= endDate) {
-                  const rowGrand = bw + color + twoColor + singleColor;
-                  matches.push([
-                    completed.toISOString().split("T")[0], // date only
-                    bw,
-                    color,
-                    twoColor,
-                    singleColor,
-                    rowGrand,
-                  ]);
+                // counts
+                const bw = parseCount(row["Black & White Total Count"]);
+                const full = parseCount(row["Full Color Total Count"]);
+                const two = parseCount(row["2-Color Total Count"]);
+                const single = parseCount(row["Single Color Total Count"]);
+                const rowGrand = bw + full + two + single;
 
-                  totals.bw += bw;
-                  totals.color += color;
-                  totals.twoColor += twoColor;
-                  totals.singleColor += singleColor;
-                  totals.grand += rowGrand;
-                }
+                matches.push({
+                  complete: rawComplete,
+                  completedDateOnly: completeDateObj
+                    .toISOString()
+                    .split("T")[0],
+                  bw,
+                  full,
+                  two,
+                  single,
+                  rowGrand,
+                });
+
+                totals.bw += bw;
+                totals.color += full;
+                totals.twoColor += two;
+                totals.singleColor += single;
+                totals.grand += rowGrand;
               }
             });
 
-            const resolvedName = getCustomerName(searchTerm);
+            // Prepare resolved name (show both code and mapped name if code is numeric and mapped)
+            const resolvedName =
+              searchTerm in customerMap
+                ? getCustomerName(searchTerm)
+                : searchTerm;
 
             previewData = {
               searchTerm,
               resolvedName,
-              startDate,
-              endDate,
+              startDate: startDate,
+              endDate: endDate,
               matches,
               totals,
             };
             renderPreview(previewData);
 
-            // enable PDF button
-            document.getElementById("generate").disabled = matches.length === 0;
+            // enable PDF only if we have matches
+            document.getElementById("generate").disabled = !matches.length;
+          },
+          error: function (err) {
+            alert("Error parsing CSV: " + err);
           },
         });
       });
@@ -255,116 +336,125 @@
         const container = document.getElementById("preview");
         container.innerHTML = "";
 
-        if (data.matches.length === 0) {
+        if (!data.matches || data.matches.length === 0) {
           container.innerHTML = "<p>No matching results found.</p>";
           return;
         }
 
-        let html = `
-        <p><strong>Billing Code / Name:</strong> ${sanitize(
+        let html = `<p><strong>Billing Code / Name:</strong> ${sanitize(
           data.resolvedName
-        )}</p>
-        <p><strong>Date Range:</strong> ${
+        )}</p>`;
+        html += `<p><strong>Date Range:</strong> ${
           data.startDate.toISOString().split("T")[0]
-        } - ${data.endDate.toISOString().split("T")[0]}</p>
-        <table border="1" cellpadding="5" cellspacing="0">
-          <tr>
-            <th>Completed Date</th>
-            <th>B&W</th>
-            <th>Full Color</th>
-            <th>2-Color</th>
-            <th>Single Color</th>
-            <th>Row Grand Total</th>
-          </tr>`;
+        } - ${data.endDate.toISOString().split("T")[0]}</p>`;
 
-        data.matches.forEach((row) => {
-          html += `
-          <tr>
-            <td>${row[0]}</td>
-            <td>${row[1]}</td>
-            <td>${row[2]}</td>
-            <td>${row[3]}</td>
-            <td>${row[4]}</td>
-            <td>${row[5]}</td>
-          </tr>`;
+        html += `<table><thead><tr>
+    <th>Completed Date</th><th>Completing Date & Time</th><th>B&amp;W</th><th>Full Color</th><th>2-Color</th><th>Single Color</th><th>Row Grand Total</th>
+  </tr></thead><tbody>`;
+
+        data.matches.forEach((r) => {
+          html += `<tr>
+      <td>${r.completedDateOnly}</td>
+      <td>${sanitize(r.complete)}</td>
+      <td>${r.bw}</td>
+      <td>${r.full}</td>
+      <td>${r.two}</td>
+      <td>${r.single}</td>
+      <td>${r.rowGrand}</td>
+    </tr>`;
         });
 
-        html += `
-        <tr style="font-weight:bold; background:#eee;">
-          <td>TOTALS</td>
-          <td>${data.totals.bw}</td>
-          <td>${data.totals.color}</td>
-          <td>${data.totals.twoColor}</td>
-          <td>${data.totals.singleColor}</td>
-          <td>${data.totals.grand}</td>
-        </tr>
-        </table>`;
+        html += `<tr class="total-row">
+    <td>TOTALS</td>
+    <td></td>
+    <td>${data.totals.bw}</td>
+    <td>${data.totals.color}</td>
+    <td>${data.totals.twoColor}</td>
+    <td>${data.totals.singleColor}</td>
+    <td>${data.totals.grand}</td>
+  </tr>`;
+
+        html += `</tbody></table>`;
 
         container.innerHTML = html;
       }
 
       document.getElementById("generate").addEventListener("click", () => {
-        if (!previewData) return;
+        if (!previewData || !previewData.matches.length) return;
         generatePDF(previewData);
       });
 
       function generatePDF(data) {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const doc = new jsPDF({ unit: "pt", format: "letter" });
 
         doc.setFontSize(16);
-        doc.text("Billing Code Usage Report", 14, 20);
+        doc.text("Billing Code Usage Report", 40, 50);
 
-        doc.setFontSize(12);
-        doc.text(`Billing Code / Name: ${sanitize(data.resolvedName)}`, 14, 30);
+        doc.setFontSize(11);
+        doc.text(`Billing Code / Name: ${sanitize(data.resolvedName)}`, 40, 72);
         doc.text(
           `Date Range: ${data.startDate.toISOString().split("T")[0]} - ${
             data.endDate.toISOString().split("T")[0]
           }`,
-          14,
-          38
+          40,
+          90
         );
 
-        const headers = [
-          [
-            "Completed Date",
-            "B&W",
-            "Full Color",
-            "2-Color",
-            "Single Color",
-            "Row Grand Total",
-          ],
-        ];
-        const summaryRow = [
+        // build rows for autotable
+        const tableBody = data.matches.map((r) => [
+          r.completedDateOnly,
+          sanitize(r.complete),
+          r.bw,
+          r.full,
+          r.two,
+          r.single,
+          r.rowGrand,
+        ]);
+
+        // append totals row
+        tableBody.push([
           "TOTALS",
+          "",
           data.totals.bw,
           data.totals.color,
           data.totals.twoColor,
           data.totals.singleColor,
           data.totals.grand,
-        ];
-
-        const tableData = [...data.matches, summaryRow];
+        ]);
 
         doc.autoTable({
-          head: headers,
-          body: tableData,
-          startY: 45,
-          styles: { halign: "center" },
+          head: [
+            [
+              "Completed Date",
+              "Completing Date & Time",
+              "B&W",
+              "Full Color",
+              "2-Color",
+              "Single Color",
+              "Row Grand Total",
+            ],
+          ],
+          body: tableBody,
+          startY: 110,
+          styles: { halign: "center", cellPadding: 6, fontSize: 10 },
           headStyles: {
             fillColor: [41, 128, 185],
             textColor: 255,
             fontStyle: "bold",
           },
-          footStyles: { fillColor: [200, 200, 200] },
+          footStyles: {
+            fillColor: [230, 230, 230],
+            textColor: 0,
+            fontStyle: "bold",
+          },
+          didDrawPage: function (dataPage) {
+            // optional: could add page footer text here
+          },
         });
 
         doc.save("billing_report.pdf");
       }
     </script>
-    <footer>
-      created by <strong>Brobinson App Solutions</strong> powered by
-      <strong>MOEbiz</strong>
-    </footer>
   </body>
 </html>
