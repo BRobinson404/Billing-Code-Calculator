@@ -6,21 +6,147 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f6f8;
+        margin: 0;
+        padding: 0;
+        color: #333;
+      }
+      .content {
+        flex: 1;
+        padding: 2rem 3rem;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      h1 {
+        text-align: center;
+        padding: 20px;
+        margin: 0;
+        background: #2c3e50;
+        color: white;
+        font-weight: 500;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 30px auto;
+        background: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      label {
+        display: inline-block;
+        margin: 10px 15px 10px 0;
+        font-weight: 500;
+      }
+
+      input[type="file"],
+      input[type="text"],
+      input[type="date"] {
+        margin-top: 5px;
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+
+      button {
+        margin: 10px 5px 20px 0;
+        padding: 10px 18px;
+        font-size: 14px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+      }
+
+      #process {
+        background: #2980b9;
+        color: white;
+      }
+      #process:hover {
+        background: #1f6390;
+      }
+
+      #generate {
+        background: #27ae60;
+        color: white;
+      }
+      #generate:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+      }
+      #generate:hover:not(:disabled) {
+        background: #1e874b;
+      }
+
+      h2 {
+        margin-top: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      table th,
+      table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+
+      table th {
+        background-color: #2980b9;
+        color: white;
+      }
+
+      table tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+
+      table tr:hover {
+        background-color: #f1f1f1;
+      }
+
+      table tr:last-child {
+        font-weight: bold;
+        background: #ecf0f1;
+      }
+
+      footer {
+        text-align: center;
+        padding: 15px;
+        font-size: 13px;
+        color: #666;
+        background: #f9f9f9;
+        border-top: 1px solid #ddd;
+        margin-top: 40px;
+      }
+    </style>
   </head>
   <body>
-    <h1>Billing Code Usage Calculator</h1>
-    <input type="file" id="csvFile" accept=".csv" /><br /><br />
+    <main>
+      <h1>Sharp Billing Code Calculator</h1>
+      <div class="content">
+        <input type="file" id="csvFile" accept=".csv" /><br /><br />
 
-    <label>Billing Code / Name: <input type="text" id="searchTerm" /></label
-    ><br /><br />
-    <label>Start Date: <input type="date" id="startDate" /></label>
-    <label>End Date: <input type="date" id="endDate" /></label><br /><br />
+        <label>Billing Code / Name: <input type="text" id="searchTerm" /></label
+        ><br /><br />
+        <label>Start Date: <input type="date" id="startDate" /></label>
+        <label>End Date: <input type="date" id="endDate" /></label><br /><br />
 
-    <button id="process">Process Data</button>
-    <button id="generate" disabled>Generate PDF Report</button>
+        <button id="process">Process Data</button>
+        <button id="generate" disabled>Generate PDF Report</button>
 
-    <h2>Preview</h2>
-    <div id="preview"></div>
+        <h2>Preview</h2>
+        <div id="preview"></div>
+      </div>
+    </main>
 
     <script>
       let previewData = null;
@@ -236,5 +362,9 @@
         doc.save("billing_report.pdf");
       }
     </script>
+    <footer>
+      created by <strong>Brobinson App Solutions</strong> powered by
+      <strong>MOEbiz</strong>
+    </footer>
   </body>
 </html>
